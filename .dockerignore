@@ -1,0 +1,13 @@
+# Keep large artifacts out of the build context (the image only needs the
+# environment files; source + data are bind-mounted at run time).
+checkpoints/
+data/
+results/
+wandb/
+*.ckpt
+*.sdf
+.git/
+__pycache__/
+*.pyc
+.env
+host.env

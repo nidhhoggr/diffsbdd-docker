@@ -1,0 +1,35 @@
+name: diffsbdd
+# CPU-only variant of the upstream environment.yaml.
+# Differences from upstream:
+#   - dropped the `nvidia` channel and `cudatoolkit=11.8`
+#   - removed the `=*cuda11.8*` build pin on pytorch
+#   - added `cpuonly` so the solver picks CPU torch + matching pytorch-scatter
+channels:
+  - pyg
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10.4
+  - pip=24.2
+  - pytorch=2.0.1
+  - cpuonly
+  # Pin MKL: 2024.1+ dropped the iJIT_NotifyEvent symbol that this torch build
+  # links against, causing `ImportError: undefined symbol: iJIT_NotifyEvent`.
+  - mkl=2024.0.0
+  - pytorch-lightning=1.8.4
+  - wandb=0.13.1
+  - rdkit=2022.03.2
+  - biopython=1.79
+  - imageio=2.21.2
+  - scipy=1.13.1
+  - pytorch-scatter=2.1.2
+  - networkx=3.3
+  - numpy=1.26.4
+  - openbabel=3.1.1
+  - pandas=2.2.2
+  - seaborn=0.13.2
+  - torchmetrics=1.4.2
+  - tqdm=4.66.5
+  - yaml=0.2.5
+  - protobuf=3.20.*

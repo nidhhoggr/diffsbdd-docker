@@ -1,0 +1,36 @@
+name: diffsbdd
+# Exact copy of DiffSBDD's upstream environment.yaml (CUDA 11.8 build).
+# Vendored here so the image build is self-contained and does not depend on
+# the file being present in the build context. The DiffSBDD source itself is
+# bind-mounted at runtime via `.:/workspace`.
+channels:
+  - pyg
+  - pytorch
+  - nvidia
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10.4
+  - pip=24.2
+  - pytorch=2.0.1=*cuda11.8*
+  - cudatoolkit=11.8
+  # Pin MKL: 2024.1+ dropped the iJIT_NotifyEvent symbol that this torch build
+  # links against, causing `ImportError: undefined symbol: iJIT_NotifyEvent`.
+  - mkl=2024.0.0
+  - pytorch-lightning=1.8.4
+  - wandb=0.13.1
+  - rdkit=2022.03.2
+  - biopython=1.79
+  - imageio=2.21.2
+  - scipy=1.13.1
+  - pytorch-scatter=2.1.2
+  - networkx=3.3
+  - numpy=1.26.4
+  - openbabel=3.1.1
+  - pandas=2.2.2
+  - seaborn=0.13.2
+  - torchmetrics=1.4.2
+  - tqdm=4.66.5
+  - yaml=0.2.5
+  - protobuf=3.20.*

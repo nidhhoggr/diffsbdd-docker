@@ -1,0 +1,129 @@
+x-diffsbdd-base: &diffsbdd-base
+  image: htvs-diffsbdd:latest
+  working_dir: /workspace
+  volumes:
+    - .:/workspace
+  env_file:
+    - host.env
+  environment:
+    PYTHONUNBUFFERED: "1"
+  restart: "no"
+  stop_grace_period: 180s
+  stop_signal: SIGTERM
+  logging:
+    driver: json-file
+    options:
+      max-size: "50m"
+      max-file: "5"
+
+services:
+  builder:
+    build:
+      context: .
+    image: htvs-diffsbdd:latest
+    entrypoint: ["echo", "DiffSBDD image builder"]
+
+  # --- one-shot helper: pull a pretrained checkpoint from Zenodo -------------
+  # CKPT_URL / CKPT default to the conditional full-atom CrossDocked model.
+  fetch-checkpoints:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-fetch
+    depends_on:
+      - builder
+    command: ["bash", "/workspace/scripts/fetch_checkpoints.sh"]
+
+  # --- de novo design: generate_ligands.py -----------------------------------
+  generate:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-generate
+    depends_on:
+      - builder
+    command:
+      - bash
+      - -lc
+      - >-
+        /opt/conda/envs/diffsbdd/bin/python generate_ligands.py "$$CKPT"
+        --pdbfile "$$PDB"
+        --outfile "$$OUTFILE"
+        --ref_ligand "$$REF_LIGAND"
+        --n_samples "$$N_SAMPLES"
+        $$GENERATE_EXTRA
+
+  # --- substructure inpainting / fragment linking: inpaint.py ----------------
+  inpaint:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-inpaint
+    depends_on:
+      - builder
+    command:
+      - bash
+      - -lc
+      - >-
+        /opt/conda/envs/diffsbdd/bin/python inpaint.py "$$CKPT"
+        --pdbfile "$$INPAINT_PDB"
+        --outfile "$$INPAINT_OUTFILE"
+        --ref_ligand "$$INPAINT_REF_LIGAND"
+        --fix_atoms "$$FIX_ATOMS"
+        --center "$$CENTER"
+        --add_n_nodes "$$ADD_N_NODES"
+        $$INPAINT_EXTRA
+
+  # --- evolutionary property optimization: optimize.py -----------------------
+  optimize:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-optimize
+    depends_on:
+      - builder
+    command:
+      - bash
+      - -lc
+      - >-
+        /opt/conda/envs/diffsbdd/bin/python optimize.py
+        --checkpoint "$$CKPT"
+        --pdbfile "$$OPT_PDB"
+        --outfile "$$OPT_OUTFILE"
+        --ref_ligand "$$OPT_REF_LIGAND"
+        --objective "$$OBJECTIVE"
+        --population_size "$$POPULATION_SIZE"
+        --evolution_steps "$$EVOLUTION_STEPS"
+        --top_k "$$TOP_K"
+        --timesteps "$$TIMESTEPS"
+        $$OPT_EXTRA
+
+  # --- sample the whole test set: test.py ------------------------------------
+  test:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-test
+    depends_on:
+      - builder
+    command:
+      - bash
+      - -lc
+      - >-
+        /opt/conda/envs/diffsbdd/bin/python test.py "$$CKPT"
+        --test_dir "$$TEST_DIR"
+        --outdir "$$TEST_OUTDIR"
+        $$TEST_EXTRA
+
+  # --- training: train.py ----------------------------------------------------
+  train:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-train
+    depends_on:
+      - builder
+    command:
+      - bash
+      - -lc
+      - >-
+        /opt/conda/envs/diffsbdd/bin/python -u train.py
+        --config "$$TRAIN_CONFIG" $$TRAIN_EXTRA
+
+  # --- interactive shell -----------------------------------------------------
+  shell:
+    <<: *diffsbdd-base
+    container_name: diffsbdd-shell
+    depends_on:
+      - builder
+    entrypoint: ["/bin/bash"]
+    stdin_open: true
+    tty: true

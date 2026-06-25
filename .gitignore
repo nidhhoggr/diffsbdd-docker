@@ -1,0 +1,15 @@
+tags
+.DS_Store
+Thumbs.db
+.vscode
+build/
+dist/
+*.egg-info/
+__pycache__/
+
+*.log
+host.env
+.env
+
+DiffSBDD
+checkpoints

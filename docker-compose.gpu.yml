@@ -1,0 +1,15 @@
+services:
+  # Build the image from the upstream CUDA 11.8 environment instead of the
+  # CPU default. (Path is inside the image; see Dockerfile COPY steps.)
+  builder:
+    build:
+      args:
+        ENV_FILE: ${ENV_FILE:-/tmp/environment.gpu.yaml}
+
+  # Reserve all NVIDIA GPUs for every service that runs the model.
+  generate: &gpu { deploy: { resources: { reservations: { devices: [{ driver: nvidia, count: all, capabilities: [gpu] }] } } } }
+  inpaint:  *gpu
+  optimize: *gpu
+  test:     *gpu
+  train:    *gpu
+  shell:    *gpu
