@@ -42,7 +42,7 @@ services:
       - bash
       - -lc
       - >-
-        /opt/conda/envs/diffsbdd/bin/python generate_ligands.py "$$CKPT"
+        /opt/conda/envs/diffsbdd/bin/python DiffSBDD/generate_ligands.py "$$CKPT"
         --pdbfile "$$PDB"
         --outfile "$$OUTFILE"
         --ref_ligand "$$REF_LIGAND"
@@ -59,7 +59,7 @@ services:
       - bash
       - -lc
       - >-
-        /opt/conda/envs/diffsbdd/bin/python inpaint.py "$$CKPT"
+        /opt/conda/envs/diffsbdd/bin/python DiffSBDD/inpaint.py "$$CKPT"
         --pdbfile "$$INPAINT_PDB"
         --outfile "$$INPAINT_OUTFILE"
         --ref_ligand "$$INPAINT_REF_LIGAND"
@@ -78,7 +78,7 @@ services:
       - bash
       - -lc
       - >-
-        /opt/conda/envs/diffsbdd/bin/python optimize.py
+        /opt/conda/envs/diffsbdd/bin/python DiffSBDD/optimize.py
         --checkpoint "$$CKPT"
         --pdbfile "$$OPT_PDB"
         --outfile "$$OPT_OUTFILE"
@@ -100,7 +100,7 @@ services:
       - bash
       - -lc
       - >-
-        /opt/conda/envs/diffsbdd/bin/python test.py "$$CKPT"
+        /opt/conda/envs/diffsbdd/bin/python DiffSBDD/test.py "$$CKPT"
         --test_dir "$$TEST_DIR"
         --outdir "$$TEST_OUTDIR"
         $$TEST_EXTRA
@@ -115,7 +115,7 @@ services:
       - bash
       - -lc
       - >-
-        /opt/conda/envs/diffsbdd/bin/python -u train.py
+        /opt/conda/envs/diffsbdd/bin/python -u DiffSBDD/train.py
         --config "$$TRAIN_CONFIG" $$TRAIN_EXTRA
 
   # --- interactive shell -----------------------------------------------------

@@ -13,6 +13,8 @@ channels:
 dependencies:
   - python=3.10.4
   - pip=24.2
+  # pytorch-lightning 1.8.4 imports pkg_resources, which setuptools 82 removed.
+  - setuptools<81
   - pytorch=2.0.1=*cuda11.8*
   - cudatoolkit=11.8
   # Pin MKL: 2024.1+ dropped the iJIT_NotifyEvent symbol that this torch build
