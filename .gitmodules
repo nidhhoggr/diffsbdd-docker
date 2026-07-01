@@ -1,0 +1,3 @@
+[submodule "DiffSBDD"]
+	path = DiffSBDD
+	url = https://github.com/nidhhoggr/DiffSBDD
