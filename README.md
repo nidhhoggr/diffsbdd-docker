@@ -27,17 +27,7 @@ The **image build** is self-contained — both conda env files are vendored unde
 not need DiffSBDD's `environment.yaml` in the context.
 
 To **run** the scripts, the DiffSBDD source (`generate_ligands.py`, `example/`,
-etc.) must be present in the workspace, because compose bind-mounts `.:/workspace`.
-So place these bundle files into the root of a DiffSBDD checkout and run compose
-from there:
-
-```bash
-git clone https://github.com/arneschneuing/DiffSBDD.git
-cd DiffSBDD
-# copy the bundle in: Dockerfile, docker-compose*.yml, docker/, scripts/,
-# host.env(.sample), .env(.gpu.sample), .dockerignore
-cp host.env.sample host.env          # already filled with example values
-```
+etc.) must be present in the workspace.
 
 (If you only want to build and smoke-test the image, you can build from the
 bundle folder directly; you just won't have the scripts to run until the source
