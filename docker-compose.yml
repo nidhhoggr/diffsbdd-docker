@@ -71,6 +71,8 @@ services:
   # --- evolutionary property optimization: optimize.py -----------------------
   optimize:
     <<: *diffsbdd-base
+    mem_limit: 13g
+    memswap_limit: 13g
     container_name: diffsbdd-optimize
     depends_on:
       - builder

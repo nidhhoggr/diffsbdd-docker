@@ -26,7 +26,7 @@ LOG_DIR="logs/inpaint"
 mkdir -p "$LOG_DIR"
 
 shopt -s nullglob
-dirs=( "$INPUTS_DIR"/cmpd*/ )
+dirs=( "$INPUTS_DIR"/mol*/ )
 if (( ${#dirs[@]} == 0 )); then
   echo "No compound dirs under '$INPUTS_DIR' (expected $INPUTS_DIR/cmpd*/)." >&2
   exit 1
