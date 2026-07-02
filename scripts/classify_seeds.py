@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Annotate/cluster the docking-hit seeds for provenance tracking.
 
-Input : a text file of "score SMILES" lines (default: inputs/compounds.txt),
-        one per line, in the same order as inputs/cmpd01, cmpd02, ...
+Input : inputs/compounds.smi -- whitespace/tab-separated, no header:
+            mol_id  docking_score  smiles
+        e.g. "mol_0001  -11.2  CC(=O)Nc1ccc(cc1)..."
+        mol_id is used directly as the 'cmpd' key (matches the mol_*
+        directory names produced by the redock_vina script), so this file
+        can be freely reordered or subset.
 Output: a CSV (default stdout) with one row per compound:
         cmpd, score, smiles, murcko, generic_scaffold, mw, clogp,
         n_rings, n_arom_rings, has_CF3, n_halogen, has_amide, biaryl, cluster
 
 Usage:
-  python classify_seeds.py [compounds.txt] [-o seeds.csv] [--sim 0.4] [--prefix cmpd]
+  python classify_seeds.py [compounds.smi] [-o seeds.csv] [--sim 0.4]
 """
 import sys, csv, argparse
 from rdkit import Chem
@@ -43,39 +47,35 @@ def biaryl(m):  # two aromatic ring atoms directly single-bonded across rings
     return False
 
 def parse(path):
+    """mol_id, score, smiles) triples. Requires all 3 columns."""
     rows = []
     with open(path) as fh:
         for line in fh:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            parts = line.split(None, 1)
-            if len(parts) == 2 and _isfloat(parts[0]):
-                score, smi = parts[0], parts[1].strip()
-            else:                      # SMILES-only file, no score column
-                score, smi = "", line
-            rows.append((score, smi))
+            parts = line.split()
+            if len(parts) < 3:
+                raise ValueError(
+                    f"expected 'mol_id  docking_score  smiles', got: {line!r}")
+            mol_id, score, smi = parts[0], parts[1], parts[2]
+            rows.append((mol_id, score, smi))
     return rows
-
-def _isfloat(s):
-    try: float(s); return True
-    except ValueError: return False
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("infile", nargs="?", default="inputs/compounds.txt")
+    ap.add_argument("infile", nargs="?", default="inputs/compounds.smi")
     ap.add_argument("-o", "--out", default="-")
     ap.add_argument("--sim", type=float, default=0.4,
                     help="Tanimoto similarity cutoff for Butina clustering")
-    ap.add_argument("--prefix", default="cmpd")
     args = ap.parse_args()
 
     rows = parse(args.infile)
     mols, recs = [], []
     fps = []
-    for i, (score, smi) in enumerate(rows, 1):
+    for mol_id, score, smi in rows:
         m = Chem.MolFromSmiles(smi)
-        cmpd = f"{args.prefix}{i:02d}"
+        cmpd = mol_id
         if m is None:
             sys.stderr.write(f"WARN {cmpd}: unparseable SMILES: {smi}\n")
             recs.append(dict(cmpd=cmpd, score=score, smiles=smi)); fps.append(None)
