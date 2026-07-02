@@ -1,10 +1,10 @@
-# Post-Inpaint QC → Docking Prep
+# Inpaint → QC → Docking Prep
 
-Pipeline for taking raw DiffSBDD `inpaint` output and getting it to a
-clean, dockable SMILES set. Covers `triage_elaborated.py` →
-`structural_qc.py` → `filter_aromatic_rings.py`, with optional
-`balance_pairs.py` if the batch is also going to be used as mol2mol TL
-pairs.
+Pipeline for running DiffSBDD `inpaint` over a seed batch and getting
+the output to a clean, dockable SMILES set. Covers `batch_inpaint.sh`
+→ `triage_elaborated.py` → `structural_qc.py` →
+`filter_aromatic_rings.py`, with optional `balance_pairs.py` if the
+batch is also going to be used as mol2mol TL pairs.
 
 ## Directory conventions
 
@@ -15,14 +15,19 @@ Each campaign lives in its own subfolder under `inputs/`, e.g.
 inputs/mol2mol_quinoline2/
 ├── compounds.smi          # seed manifest (see format below)
 ├── mol_0000/
-│   └── elaborated.sdf      # raw DiffSBDD inpaint output for this seed
+│   ├── docked.sdf           # redocked pose for this seed (input to inpaint)
+│   └── elaborated.sdf       # raw DiffSBDD inpaint output for this seed
 ├── mol_0003/
+│   ├── docked.sdf
 │   └── elaborated.sdf
 └── ...
 ```
 
 - Directory names are `mol_NNNN` (4-digit zero-padded), matching what
   the `redock_vina` script emits.
+- `docked.sdf` is the redocked pose for that seed — produced from
+  `docked.pdbqt` via `pdbqt2sdf.sh` — and is the direct input to
+  `batch_inpaint.sh` (Step 0).
 - Each `mol_NNNN/elaborated.sdf` is the raw, unfiltered inpaint output
   for that seed — it will contain invalid records, duplicates, and
   copies identical to the parent; that's expected and is what
@@ -52,6 +57,58 @@ mol_0000        -12.1   CNc1nccc(n1)c1cccc(c1)c1cc(cc(c1)C(F)(F)F)C(F)(F)F
   elaborated around).
 
 Blank lines and lines starting with `#` are skipped.
+
+## Step 0 — `batch_inpaint.sh`
+
+**Purpose:** run DiffSBDD's `inpaint.py` (via the `inpaint` Compose
+service) over every seed directory, using each seed's own redocked
+pose as both the pocket definition and the fixed substructure to
+elaborate around.
+
+```
+scripts/batch_inpaint.sh inputs/mol2mol_quinoline2
+```
+
+Run from the repo root, inside the container (`./scripts/interactive.bash`
+drops you into it) or via `docker compose run`.
+
+**Per-seed I/O** (relative to `INPUTS_DIR`, arg 1, default `inputs`):
+
+| | path | role |
+|---|---|---|
+| in | `<mol_id>/docked.sdf` | `--ref_ligand` (defines the pocket) **and** `--fix_atoms` (the substructure held fixed) |
+| out | `<mol_id>/elaborated.sdf` | raw inpaint output — input to Step 1 |
+
+**Shared parameters** come from `host.env` (`INPAINT_PDB` — the
+receptor structure, same for every seed in the batch; `CENTER`;
+`ADD_N_NODES`; `CKPT`; `INPAINT_EXTRA` for any raw extra flags). Only
+the three per-seed paths (`INPAINT_REF_LIGAND`, `FIX_ATOMS`,
+`INPAINT_OUTFILE`) are overridden per-directory via `docker compose
+run -e`, which takes precedence over `host.env`.
+
+**Resumable:** any `mol_*` whose `elaborated.sdf` already exists
+(non-empty) is skipped, so a batch can be safely re-run after a
+partial failure. Force a full redo with:
+
+```
+FORCE=1 scripts/batch_inpaint.sh inputs/mol2mol_quinoline2
+```
+
+Logs go to `logs/inpaint/<mol_id>.log` per seed, plus a running
+`logs/inpaint/summary.log` with one OK/SKIP/FAIL line per seed. Exit
+status is always 0 — check the printed `Done: N ok, N skipped, N
+failed.` line (and `Failed: ...` list) rather than the shell's `$?`.
+
+A seed is marked `FAIL` (not just skipped) if `docked.sdf` is missing
+or empty going in, or if the `docker compose run` for that seed exits
+non-zero — check that seed's log file for the underlying DiffSBDD
+error in the latter case.
+
+> **Note:** the script's own comments and the "no compound dirs"
+> error message still say `inputs/cmpd*/` — that's stale wording left
+> over from the old convention. The actual glob on disk is `mol*/`,
+> which is what matches your directory layout; nothing to change on
+> your end.
 
 ## Step 1 — `triage_elaborated.py`
 
@@ -132,7 +189,7 @@ comma-delimited CSV with a `smiles` header column (i.e. `structural_qc.py`'s
 output) and it preserves every column; point it at a legacy
 whitespace `.smi` file (`SMILES`, `SMILES id`, or `score id SMILES`,
 no header) and it falls back to that format. Force one or the other
-[Owith `--format csv` / `--format smi` if needed.
+with `--format csv` / `--format smi` if needed.
 
 ## Optional — `balance_pairs.py`
 
