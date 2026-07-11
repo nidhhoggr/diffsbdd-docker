@@ -1,4 +1,5 @@
 # DiffSBDD in docker-compose
+<img width="2637" height="1299" alt="Diffusion_Pipeline" src="https://github.com/user-attachments/assets/935b0ee7-76fb-4d3d-8902-50e77f2429bd" />
 
 Same shape as the reinvent4-mol2mol setup: a shared `x-diffsbdd-base` anchor, a
 `builder` service that produces `htvs-diffsbdd:latest`, runtime knobs in
