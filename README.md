@@ -99,7 +99,30 @@ N_SAMPLES=100 GENERATE_EXTRA="--sanitize --timesteps 50" \
 - **`data/` for `test`/`train`.** Those services expect a processed dataset
   (`process_crossdock.py` / `process_bindingmoad.py` output) under the mounted
   workspace. Set `TEST_DIR` / `TRAIN_CONFIG` accordingly.
+
+
 - **W&B.** `train.py` uses Weights & Biases. Add `WANDB_API_KEY=...` and/or
   `WANDB_MODE=offline` to `host.env` if you train.
 - **Image name.** `htvs-diffsbdd:latest`, to sit alongside your
   `htvs-pipeline:latest` and `htvs-redock:latest` images.
+
+---
+
+## Citation
+
+```bibtex
+@article{schneuing2024diffsbdd,
+   title={Structure-based drug design with equivariant diffusion models},
+   author={Schneuing, Arne and Harris, Charles and Du, Yuanqi and Didi, Kieran and Jamasb, Arian and Igashov, Ilia and Du, Weitao and Gomes, Carla and Blundell, Tom L and Lio, Pietro and Welling, Max and Bronstein, Michael and Correia, Bruno},
+   journal={Nature Computational Science},
+   year={2024},
+   month={Dec},
+   day={01},
+   volume={4},
+   number={12},
+   pages={899-909},
+   issn={2662-8457},
+   doi={10.1038/s43588-024-00737-x},
+   url={https://doi.org/10.1038/s43588-024-00737-x}
+}
+```
